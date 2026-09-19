@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>공연영상학과 학회비 납부 조회</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --bg:#f6f7f9;
+    --paper:#ffffff;
+    --ink:#1c2330;
+    --ink-soft:#4a5263;
+    --muted:#8b929f;
+    --line:#e7e9ee;
+    --line-soft:#eef0f4;
+    --accent:#2d4a77;
+    --accent-soft:#eef2f8;
+    --paid:#1f7a55; --paid-bg:#eef6f1; --paid-line:#cfe6da;
+    --unpaid:#b4543a; --unpaid-bg:#fbf1ed; --unpaid-line:#eed7cd;
+    --unknown:#8a6418; --unknown-bg:#fbf6e8; --unknown-line:#eadcae;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;color:var(--ink);
+    font-family:"Pretendard","Apple SD Gothic Neo",system-ui,-apple-system,sans-serif;
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  .page{max-width:560px;margin:0 auto;padding:0 20px 64px;}
+
+  /* hero */
+  .hero{text-align:center;padding:48px 4px 8px;}
+  .school{
+    display:inline-block;font-size:12.5px;font-weight:600;letter-spacing:.02em;
+    color:var(--accent);background:var(--accent-soft);
+    padding:6px 14px;border-radius:999px;
+  }
+  .title{
+    font-size:clamp(28px,7vw,36px);font-weight:800;letter-spacing:-.02em;
+    color:var(--ink);margin:20px 0 0;line-height:1.2;
+  }
+  .subtitle{font-size:15px;color:var(--muted);margin:10px 0 0;font-weight:400;}
+
+  /* search */
+  .search-wrap{margin-top:28px;}
+  .search-box{
+    display:flex;align-items:center;gap:6px;background:var(--paper);
+    border:1px solid var(--line);border-radius:14px;padding:2px 14px;
+    box-shadow:0 1px 2px rgba(20,25,40,.04);
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);}
+  .search-box svg{flex:0 0 auto;color:var(--muted)}
+  .search-box input{
+    flex:1;border:0;outline:0;background:transparent;font-family:inherit;
+    font-size:16px;color:var(--ink);padding:14px 4px;
+  }
+  .search-box input::placeholder{color:#b3b9c4}
+  .hint{font-size:13.5px;color:var(--muted);margin:12px 2px 0;text-align:center;}
+
+  .multi{font-size:13px;color:var(--ink-soft);margin:22px 2px 0;text-align:center;}
+
+  /* results */
+  .results{margin-top:14px;display:flex;flex-direction:column;gap:12px;}
+  .card{
+    background:var(--paper);border:1px solid var(--line);border-radius:16px;
+    padding:20px;box-shadow:0 1px 3px rgba(20,25,40,.05);
+    animation:fade .18s ease;
+  }
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .tape{display:none}
+
+  .status{
+    display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;
+    padding:6px 12px;border-radius:999px;border:1px solid transparent;
+  }
+  .status.paid{color:var(--paid);background:var(--paid-bg);border-color:var(--paid-line);}
+  .status.unpaid{color:var(--unpaid);background:var(--unpaid-bg);border-color:var(--unpaid-line);}
+  .status.unknown{color:var(--unknown);background:var(--unknown-bg);border-color:var(--unknown-line);}
+  .status svg{flex:0 0 auto}
+
+  .name{font-size:24px;font-weight:700;color:var(--ink);margin:14px 0 0;letter-spacing:-.01em;line-height:1.25;}
+  .name .alias{font-size:15px;color:var(--muted);margin-left:7px;font-weight:500}
+
+  .meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+  .chip{
+    font-size:12.5px;font-weight:500;padding:5px 11px;border-radius:8px;
+    border:1px solid var(--line);background:#fafbfc;color:var(--ink-soft);
+  }
+  .chip.major-media{color:#4a3a8c;background:#f3f1fb;border-color:#e4dff5}
+  .chip.major-act{color:#9c3a59;background:#fdf0f4;border-color:#f6dde4}
+  .chip.major-music{color:#9a5a1c;background:#fcf2e6;border-color:#f3e2cd}
+  .chip.major-film{color:#1d7a64;background:#ecf7f3;border-color:#d4ebe3}
+  .chip.major-none{color:#6b7280;background:#f4f5f7;border-color:#e7e9ee}
+  .chip.id{color:var(--accent);background:var(--accent-soft);border-color:#dde5f0}
+  .chip.st-on{color:#2d6a4f;background:#eef6f1;border-color:#d6e9df}
+  .chip.st-leave{color:#7a5ea8;background:#f4f0fb;border-color:#e6ddf3}
+  .chip.st-quit{color:#9a4444;background:#fbeeee;border-color:#eed7d7}
+
+  .admit{font-size:13.5px;color:var(--muted);margin-top:12px;}
+  .note{font-size:13px;color:var(--ink-soft);margin-top:14px;padding-top:13px;border-top:1px solid var(--line-soft);line-height:1.6}
+  .note.ok{color:var(--paid)}
+  .note.no{color:var(--unpaid)}
+  .note.unknown{color:var(--unknown)}
+
+  /* empty */
+  .empty{text-align:center;padding:40px 14px 12px;}
+  .empty .ec{display:inline-flex;opacity:.9}
+  .empty h3{font-size:17px;font-weight:700;color:var(--ink);margin:16px 0 6px}
+  .empty p{font-size:14px;color:var(--muted);margin:0;line-height:1.6}
+
+  footer{margin-top:36px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.7}
+  footer .tag{
+    display:inline-block;font-size:12px;font-weight:600;color:var(--accent);
+    background:var(--accent-soft);border-radius:999px;padding:4px 12px;margin-bottom:10px;
+  }
+  footer p{margin:2px 0}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <span class="school">중앙대학교 예술대학원 · 공연영상학과</span>
+    <h1 class="title">학회비 납부 조회</h1>
+    <p class="subtitle">이름을 입력하면 학회비 납부 여부를 확인할 수 있습니다.</p>
+  </header>
+
+  <section class="search-wrap">
+    <div class="search-box">
+      <svg width="20" height="20" viewBox="0 0 22 22" aria-hidden="true"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="2" fill="none"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="q" type="search" inputmode="text" autocomplete="off" placeholder="이름을 입력하세요" aria-label="이름 검색">
+    </div>
+    <div class="hint" id="hint">본인 이름을 입력해 주세요.</div>
+  </section>
+
+  <div class="multi" id="multi"></div>
+  <div class="results" id="results"></div>
+
+  <footer>
+    <div class="tag">데이터 기준 2026년 9월 19일</div>
+    <p>졸업생 제외 · 현재 재학생 대상 · 연락처와 이메일은 표시되지 않습니다.</p>
+    <p>납부 여부가 실제와 다르거나 본인 정보가 없으면 학생회로 문의해 주세요.</p>
+  </footer>
+</div>
+
+<script>
+const DATA = [{"n":"WEI SIYU","m":"미디어스토리텔링","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"이용수","m":"미디어스토리텔링","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"정세연","m":"미디어스토리텔링","c":59,"y":2026,"sem":"2학기","t":"재학","p":1},{"n":"진애","m":"미디어스토리텔링","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"표예나","m":"미디어스토리텔링","c":59,"y":2026,"sem":"2학기","t":"재학","p":1},{"n":"문예은","m":"미디어스토리텔링","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"신은혜","m":"미디어스토리텔링","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"최희진","m":"미디어스토리텔링","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"이병욱","m":"미디어스토리텔링","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"좌아멍씬","m":"미디어스토리텔링","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"권경원","m":"미디어스토리텔링","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"김나영","m":"미디어스토리텔링","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"이현정","m":"미디어스토리텔링","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"이혜진","m":"미디어스토리텔링","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"김은하","m":"미디어스토리텔링","c":49,"y":2021,"sem":"2학기","t":"재학","p":0},{"n":"박진호","m":"미디어스토리텔링","c":53,"y":2023,"sem":"2학기","t":"재학","p":1},{"n":"이정수","m":"미디어스토리텔링","c":53,"y":2023,"sem":"2학기","t":"재학","p":1},{"n":"김소연","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"동소우","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"부성훈","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"유지선","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"윤성현","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"이송희","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":1},{"n":"정해돋이","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"조민기","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"최윤영","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":1},{"n":"황시원","m":"연기뮤지컬","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"이혜린","m":"연기뮤지컬","c":54,"y":2024,"sem":"1학기","t":"재학","p":1},{"n":"권민","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"김민선","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"김민주","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"김연주","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"김일중","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"박세양","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"박세희","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"박아인","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"방승빈","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"이수지","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"이태경","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"임송현","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"전연진","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"정성채","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"주홍준","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"차은정","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"최석진","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"WANG CHIA HSIN","m":"연기뮤지컬","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"신예림","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"DENG XUEYING","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"ZHAO WEIBO","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"고신이","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"김평원","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"김하진","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"박세동","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":1},{"n":"이문혜","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":null},{"n":"이승현","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":1},{"n":"이하민","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"탁성준","m":"연기뮤지컬","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"문재승","m":"연기뮤지컬","c":50,"y":2022,"sem":"1학기","t":"재학","p":1},{"n":"이광배","m":"연기뮤지컬","c":51,"y":2022,"sem":"2학기","t":"재학","p":1},{"n":"안서휘","m":"연기뮤지컬","c":54,"y":2024,"sem":"1학기","t":"재학","p":0},{"n":"현정은","m":"연기뮤지컬","c":54,"y":2024,"sem":"1학기","t":"재학","p":0},{"n":"CUI XINLONG","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"권태용","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"박근우","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"박소희","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"손승우","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"송선재","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"심예진","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"이창엽","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"정유진","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"홍진아","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"황인해","m":"연기뮤지컬","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"지은혜","m":"연기뮤지컬","c":55,"y":2024,"sem":"2학기","t":"재학","p":null},{"n":"김민재","m":"연기뮤지컬","c":51,"y":2022,"sem":"2학기","t":"재학","p":1},{"n":"김채은","m":"연기뮤지컬","c":52,"y":2023,"sem":"1학기","t":"재학","p":1},{"n":"유영서","m":"연기뮤지컬","c":52,"y":2023,"sem":"1학기","t":"재학","p":1},{"n":"박성민","m":"연기뮤지컬","c":53,"y":2023,"sem":"2학기","t":"재학","p":0},{"n":"김덕규","m":"연기뮤지컬","c":54,"y":2024,"sem":"1학기","t":"재학","p":0},{"n":"김동현","m":"연기뮤지컬","c":54,"y":2024,"sem":"1학기","t":"재학","p":0},{"n":"황수아","m":"연기뮤지컬","c":54,"y":2024,"sem":"1학기","t":"재학","p":0},{"n":"김경민","m":"연기뮤지컬","c":55,"y":2024,"sem":"2학기","t":"재학","p":0},{"n":"봉희진","m":"연기뮤지컬","c":55,"y":2024,"sem":"2학기","t":"재학","p":0},{"n":"서선아","m":"연기뮤지컬","c":55,"y":2024,"sem":"2학기","t":"재학","p":0},{"n":"윤정아","m":"연기뮤지컬","c":55,"y":2024,"sem":"2학기","t":"재학","p":1},{"n":"임지안","m":"연기뮤지컬","c":55,"y":2024,"sem":"2학기","t":"재학","p":1},{"n":"CHEN XIAOYING","m":"실용음악","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"신주로","m":"실용음악","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"최상원","m":"실용음악","c":59,"y":2026,"sem":"2학기","t":"재학","p":1},{"n":"풍첨첨","m":"실용음악","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"LI LINXI","m":"영화영상미디어","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"LU KEYING","m":"영화영상미디어","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"WU YUTONG","m":"영화영상미디어","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"맹가이","m":"영화영상미디어","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"배수홍","m":"영화영상미디어","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"석정빈","m":"영화영상미디어","c":59,"y":2026,"sem":"2학기","t":"재학","p":0},{"n":"최연주","m":"영화영상미디어","c":59,"y":2026,"sem":"2학기","t":"재학","p":1},{"n":"정웅빈","m":"실용음악","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"박언민","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"박해나","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"서상동","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"송주환","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"이성원","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"이영기","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"정진현","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"황태윤","m":"실용음악","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"GU LINZHI","m":"영화영상미디어","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"고예비","m":"영화영상미디어","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"김해리","m":"영화영상미디어","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"우추잉","m":"영화영상미디어","c":58,"y":2026,"sem":"1학기","t":"재학","p":0},{"n":"윤소희","m":"영화영상미디어","c":58,"y":2026,"sem":"1학기","t":"재학","p":1},{"n":"JIANG YUXUAN","m":"실용음악","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"모시윤","m":"실용음악","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"최현정","m":"실용음악","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"LIU SHENGQUN","m":"영화영상미디어","c":57,"y":2025,"sem":"2학기","t":"재학","p":null},{"n":"고소아","m":"영화영상미디어","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"김동희","m":"영화영상미디어","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"김지혜","m":"영화영상미디어","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"천신이","m":"영화영상미디어","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"황가근","m":"영화영상미디어","c":57,"y":2025,"sem":"2학기","t":"재학","p":0},{"n":"김기은","m":"실용음악","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"유천영","m":"실용음악","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"전승연","m":"실용음악","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"HUANG YAN","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"JU KUNQIAN","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"ODRAGCHAA DAVAAJARGAL","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"김수원","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"문성현","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"서우진","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"이기선","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"이위용","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":0},{"n":"증요가","m":"영화영상미디어","c":56,"y":2025,"sem":"1학기","t":"재학","p":1},{"n":"전성애","m":"영화영상미디어","c":49,"y":2021,"sem":"2학기","t":"재학","p":1},{"n":"조경훈","m":"영화영상미디어","c":49,"y":2021,"sem":"2학기","t":"재학","p":1},{"n":"김형진","m":"영화영상미디어","c":53,"y":2023,"sem":"2학기","t":"재학","p":0},{"n":"LI CHUMENG","m":"실용음악","c":55,"y":2024,"sem":"2학기","t":"재학","p":0},{"n":"ZHANG XIAOYUE","m":"실용음악","c":55,"y":2024,"sem":"2학기","t":"재학","p":0},{"n":"신일훈","m":"실용음악","c":55,"y":2024,"sem":"2학기","t":"재학","p":1},{"n":"황현명","m":"실용음악","c":55,"y":2024,"sem":"2학기","t":"재학","p":0},{"n":"심각현","m":"영화영상미디어","c":55,"y":2024,"sem":"2학기","t":"재학","p":1},{"n":"장캐인","m":"영화영상미디어","c":55,"y":2024,"sem":"2학기","t":"재학","p":0}];
+const MJ={"미디어스토리텔링":"major-media","연기뮤지컬":"major-act","실용음악":"major-music","영화영상미디어":"major-film"};
+function admitLabel(r){return (r.y&&r.sem)?(r.y+'년 '+r.sem+' 입학'):'';}
+function idLabel(r){return (r.c!==''&&r.c!=null)?(r.c+'기'):'';}
+function norm(s){return (s||'').toString().toLowerCase().replace(/\s+/g,'');}
+DATA.forEach(r=>{r._k=norm(r.n)+(r.a?' '+r.a.map(norm).join(' '):'');});
+
+const qEl=document.getElementById('q'),resEl=document.getElementById('results'),
+      hintEl=document.getElementById('hint'),multiEl=document.getElementById('multi');
+
+const CHECK='<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#13a06f"/><path d="M6 10.5l2.5 2.5L14 7.5" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const BANG='<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#e8642e"/><path d="M10 5v6" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="10" cy="14.5" r="1.3" fill="#fff"/></svg>';
+const WAIT='<svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#a77a24"/><path d="M7.6 7.7a2.6 2.6 0 1 1 3.1 2.5c-.7.2-.9.7-.9 1.3" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="9.8" cy="14.4" r="1.1" fill="#fff"/></svg>';
+
+function statusChip(t){
+  if(t==='휴학')return '<span class="chip st-leave">휴학</span>';
+  if(t==='자퇴')return '<span class="chip st-quit">자퇴</span>';
+  return '<span class="chip st-on">재학</span>';
+}
+function render(q){
+  const nq=norm(q);
+  if(nq.length<1){
+    multiEl.textContent='';
+    resEl.innerHTML='<div class="empty"><span class="ec"><svg width="62" height="62" viewBox="0 0 70 70"><rect x="14" y="22" width="42" height="30" rx="4" fill="#d3d9e2"/><rect x="14" y="13" width="42" height="11" rx="2" fill="#2d4a77"/><path d="M20 13l7 11M31 13l7 11M42 13l7 11" stroke="#fff" stroke-width="2.4"/><circle cx="35" cy="38" r="3" fill="#2d4a77"/></svg></span><h3>이름을 검색해 주세요</h3><p>본인 이름을 입력하면<br>학회비 납부 여부를 알려드려요</p></div>';
+    hintEl.style.display='';hintEl.textContent='이름을 입력하면 결과가 짠! 하고 나타나요';
+    return;
+  }
+  let hits=DATA.filter(r=>r._k.includes(nq));
+  hits.sort((a,b)=>{
+    const ax=norm(a.n)===nq?0:(norm(a.n).startsWith(nq)?1:2);
+    const bx=norm(b.n)===nq?0:(norm(b.n).startsWith(nq)?1:2);
+    if(ax!==bx)return ax-bx;return a.n.localeCompare(b.n,'ko');
+  });
+  if(hits.length===0){
+    multiEl.textContent='';hintEl.style.display='none';
+    resEl.innerHTML='<div class="empty"><span class="ec"><svg width="60" height="60" viewBox="0 0 64 64"><circle cx="27" cy="27" r="18" stroke="#9aa3b2" stroke-width="5" fill="#fff"/><path d="M40 40l14 14" stroke="#9aa3b2" stroke-width="5" stroke-linecap="round"/><path d="M21 27h12" stroke="#b4543a" stroke-width="4" stroke-linecap="round"/></svg></span><h3>검색 결과가 없어요</h3><p>이름을 다시 확인해 주세요. 졸업생은 조회 대상이 아니며,<br>정보가 없다면 학생회로 문의해 주세요.</p></div>';
+    return;
+  }
+  hintEl.style.display='none';
+  multiEl.textContent=hits.length>1?('검색 결과 '+hits.length+'명 — 전공·기수로 본인을 확인하세요'):'';
+  resEl.innerHTML=hits.map(r=>{
+    const paid=r.p===1, unknown=r.p==null;
+    const state=paid?'paid':(unknown?'unknown':'unpaid');
+    const alias=r.a?('<span class="alias">'+r.a.join(', ')+'</span>'):'';
+    const mjcls=MJ[r.m]||'major-none';
+    const major=r.m?('<span class="chip '+mjcls+'">'+r.m+'</span>'):'<span class="chip major-none">전공 미상</span>';
+    const idl=idLabel(r),adm=admitLabel(r);
+    const note=paid
+      ?'<div class="note ok">학회비 납부가 완료된 것으로 확인돼요. 감사합니다!</div>'
+      :(unknown
+        ?'<div class="note unknown">기존 자료에서 납부 여부를 확인하기 어려워요. 학생회로 문의해 주세요.</div>'
+        :'<div class="note no">아직 납부 내역이 확인되지 않았어요. 이미 내셨다면 학생회로 알려 주세요.</div>');
+    const icon=paid?CHECK:(unknown?WAIT:BANG);
+    const label=paid?'학회비 납부 완료':(unknown?'납부 여부 확인 필요':'학회비 미납');
+    return '<div class="card '+state+'">'
+      +'<span class="tape"></span>'
+      +'<span class="status '+state+'">'+icon+label+'</span>'
+      +'<div class="name">'+r.n+alias+'</div>'
+      +'<div class="meta">'+major+(idl?'<span class="chip id">'+idl+'</span>':'')+statusChip(r.t)+'</div>'
+      +(adm?'<div class="admit">'+adm+'</div>':'')
+      +note+'</div>';
+  }).join('');
+}
+qEl.addEventListener('input',e=>render(e.target.value));
+render('');qEl.focus();
+</script>
+</body>
+</html>
